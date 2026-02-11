@@ -3,132 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XIAO Swing Sensor PRO</title>
+    <title>XIAO SWING PRO EX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@1,800;1,900&display=swap" rel="stylesheet">
     <style>
+        :root { --supreme-red: #ff0000; }
         body { 
-            background: #0a0a0a; 
-            color: #e0e0e0; 
-            font-family: 'Courier New', Courier, monospace; 
-            text-align: center; 
-            margin: 0; 
-            padding: 20px;
-            overflow: hidden;
-        }
-        h1 { color: #00e5ff; font-size: 20px; letter-spacing: 3px; margin-bottom: 30px; }
-        
-        .main-display {
-            background: linear-gradient(145deg, #1a1a1a, #000000);
-            border: 2px solid #333;
-            border-radius: 20px;
-            padding: 40px 10px;
-            margin: 20px auto;
-            max-width: 350px;
-            box-shadow: 0 0 20px rgba(0, 229, 255, 0.2);
+            background: #000; color: #fff; 
+            font-family: 'Montserrat', sans-serif; font-style: italic;
+            margin: 0; padding: 0; height: 100vh; display: flex; flex-direction: column;
         }
 
-        .label { font-size: 14px; color: #00e5ff; margin-bottom: 5px; }
-        
-        #speed { 
-            font-size: 100px; 
-            font-weight: bold; 
-            color: #00ff41; 
-            text-shadow: 0 0 15px rgba(0, 255, 65, 0.5);
-            margin: 0;
+        /* メイン表示エリア */
+        .container { flex: 1; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
+
+        .header-logo {
+            background: var(--supreme-red); color: white;
+            display: inline-block; padding: 5px 20px; font-size: 20px; font-weight: 900;
+            align-self: center; letter-spacing: -1px; margin-bottom: 20px;
         }
 
-        .unit { font-size: 20px; color: #555; margin-bottom: 20px; }
+        /* 速度表示：底辺合わせ */
+        .speed-display {
+            display: flex; align-items: baseline; justify-content: center;
+            margin: 20px 0; letter-spacing: -5px;
+        }
+        #speed { font-size: 120px; font-weight: 900; line-height: 1; }
+        .unit { font-size: 48px; font-weight: 800; margin-left: 10px; letter-spacing: -2px; }
 
-        .sub-stats {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            border-top: 1px solid #333;
-            padding-top: 20px;
-            margin-top: 10px;
+        /* 履歴リスト：スライド可能 */
+        .history-container {
+            flex: 1; overflow-y: auto; margin: 10px 0;
+            border-top: 1px solid #333; padding: 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .history-item {
+            display: flex; justify-content: space-between;
+            padding: 8px 15px; border-bottom: 1px solid #1a1a1a; font-size: 18px;
+        }
+        .history-item:first-child { color: var(--supreme-red); font-size: 22px; }
+
+        /* 操作ボタン群 */
+        .controls {
+            display: flex; background: #111; padding: 10px;
+            justify-content: space-around; align-items: center;
+        }
+        .btn {
+            width: 60px; height: 60px; /* 約15mm相当の操作感 */
+            background: #fff; color: #000; border: none;
+            font-family: 'Montserrat', sans-serif; font-weight: 900; font-style: italic;
+            font-size: 12px; cursor: pointer; border-radius: 5px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .btn.active { background: var(--supreme-red); color: #fff; }
+
+        /* 横画面レイアウト */
+        @media (orientation: landscape) {
+            body { flex-direction: row; }
+            .controls { flex-direction: column; width: 80px; height: 100vh; }
+            .history-container { max-height: none; }
         }
 
-        .stat-box { text-align: center; }
-        .stat-val { font-size: 24px; color: #ff0055; font-weight: bold; }
-        .stat-label { font-size: 10px; color: #888; text-transform: uppercase; }
-
-        button { 
-            margin-top: 40px;
-            padding: 15px 40px; 
-            background: transparent;
-            color: #00e5ff; 
-            border: 2px solid #00e5ff; 
-            border-radius: 50px; 
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        button:hover { background: rgba(0, 229, 255, 0.1); }
-        #status { margin-top: 20px; font-size: 12px; color: #444; }
+        #status { font-size: 9px; color: #444; position: absolute; top: 5px; left: 5px; font-style: normal; }
     </style>
 </head>
 <body>
-    <h1>SWING ANALYZER v1.0</h1>
-    
-    <div class="main-display">
-        <div class="label">REAL-TIME SPEED</div>
-        <div id="speed">0.0</div>
-        <div class="unit">km/h</div>
-
-        <div class="sub-stats">
-            <div class="stat-box">
-                <div class="stat-label">Max Speed</div>
-                <div id="maxSpeed" class="stat-val">0.0</div>
-            </div>
+    <div id="status">READY</div>
+    <div class="container">
+        <div class="header-logo">SWING</div>
+        
+        <div class="speed-display">
+            <div id="speed">0.0</div>
+            <div class="unit" id="unitLabel">km/h</div>
         </div>
+
+        <div class="history-container" id="historyList">
+            </div>
     </div>
 
-    <button id="connectBtn">CONNECT TO SENSOR</button>
-    <div id="status">STATUS: STANDBY</div>
+    <nav class="controls">
+        <button class="btn" id="unitBtn">UNIT<br>km/h</button>
+        <button class="btn" id="pauseBtn">PAUSE</button>
+        <button class="btn" id="saveBtn">SAVE</button>
+        <button class="btn" id="connectBtn" style="background:var(--supreme-red); color:#fff;">LOG</button>
+    </nav>
 
     <script>
         const SERVICE_UUID = "19b10000-e8f2-537e-4f3c-d104768a1214";
         const CHAR_UUID    = "19b10001-e8f2-537e-4f3c-d104768a1214";
 
-        let maxSpeedValue = 0;
+        let isPaused = false;
+        let currentUnit = 'km/h'; // or 'm/s'
+        let history = [];
+
         const speedDiv = document.getElementById('speed');
-        const maxSpeedDiv = document.getElementById('maxSpeed');
-        const status = document.getElementById('status');
-        const btn = document.getElementById('connectBtn');
+        const unitLabel = document.getElementById('unitLabel');
+        const historyList = document.getElementById('historyList');
 
-        btn.addEventListener('click', async () => {
-            try {
-                const device = await navigator.bluetooth.requestDevice({
-                    acceptAllDevices: true,
-                    optionalServices: [SERVICE_UUID]
-                });
-
-                status.innerText = "STATUS: CONNECTING...";
-                const server = await device.gatt.connect();
-                const service = await server.getPrimaryService(SERVICE_UUID);
-                const characteristic = await service.getCharacteristic(CHAR_UUID);
-
-                await characteristic.startNotifications();
-                status.innerText = "STATUS: ACTIVE";
-                btn.style.display = "none";
-
-                characteristic.addEventListener('characteristicvaluechanged', (event) => {
-                    const value = new TextDecoder().decode(event.target.value);
-                    const currentSpeed = parseFloat(value);
-                    
-                    // 現在値を表示
-                    speedDiv.innerText = currentSpeed.toFixed(1);
-
-                    // 最高速を更新
-                    if (currentSpeed > maxSpeedValue) {
-                        maxSpeedValue = currentSpeed;
-                        maxSpeedDiv.innerText = maxSpeedValue.toFixed(1);
-                    }
-                });
-
-            } catch (error) {
-                status.innerText = "ERROR: " + error.message;
-            }
+        // 単位切り替え
+        document.getElementById('unitBtn').addEventListener('click', (e) => {
+            currentUnit = (currentUnit === 'km/h') ? 'm/s' : 'km/h';
+            e.target.innerHTML = `UNIT<br>${currentUnit}`;
+            unitLabel.innerText = currentUnit;
         });
-    </script>
-</body>
-</html>
+
+        // 一時停止
+        document.getElementById('pauseBtn').addEventListener('click', (e) => {
+            isPaused = !isPaused;
+            e.target.innerText = isPaused ? "RESUME" : "PAUSE";
+            e.target.classList.toggle('active');
+        });
+
+        // 保存（CSVなどで書き出しも可能ですが、今はコンソール表示のみ）
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            alert("History Saved: " + history.length + " logs");
+        });
+
+        // BLE接続処理
+        document.getElementById('
