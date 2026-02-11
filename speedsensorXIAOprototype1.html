@@ -1,42 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>BLE TEST</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XIAO Swing Sensor</title>
+    <style>
+        body { 
+            background: #121212; 
+            color: #ffffff; 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            text-align: center; 
+            margin: 0; 
+            padding: 20px;
+        }
+        h1 { color: #00e5ff; margin-bottom: 10px; }
+        .card {
+            background: #1e1e1e;
+            border-radius: 20px;
+            padding: 40px 20px;
+            margin: 20px auto;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        #speed { 
+            font-size: 100px; 
+            font-weight: bold; 
+            color: #00ff41; /* マトリックス・グリーン */
+            line-height: 1;
+        }
+        .unit { font-size: 24px; color: #888; margin-bottom: 30px; }
+        button { 
+            font-size: 20px; 
+            font-weight: bold;
+            padding: 15px 40px; 
+            background: linear-gradient(45deg, #007bff, #00d2ff);
+            color: #fff; 
+            border: none; 
+            border-radius: 50px; 
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,123,255,0.4);
+            transition: transform 0.2s;
+        }
+        button:active { transform: scale(0.95); }
+        #status { margin-top: 25px; font-size: 14px; color: #666; }
+    </style>
 </head>
 <body>
-    <button id="connect" style="font-size: 30px; padding: 20px;">1. 接続テスト開始</button>
-    <div id="status" style="font-size: 20px; margin-top: 20px;">ステータス: 待機中</div>
+    <h1>SWING SENSOR</h1>
+    
+    <div class="card">
+        <div id="speed">0.0</div>
+        <div class="unit">km/h</div>
+        
+        <button id="connectBtn">CONNECT TO XIAO</button>
+        <div id="status">ステータス: 未接続</div>
+    </div>
 
     <script>
-        document.getElementById('connect').addEventListener('click', async () => {
-            const status = document.getElementById('status');
-            status.innerText = "スキャン中...";
-            
+        // Arduino側と完全に一致させる128ビットUUID
+        const SERVICE_UUID = "19b10000-e8f2-537e-4f3c-d104768a1214";
+        const CHAR_UUID    = "19b10001-e8f2-537e-4f3c-d104768a1214";
+
+        const btn = document.getElementById('connectBtn');
+        const status = document.getElementById('status');
+        const speedDiv = document.getElementById('speed');
+
+        btn.addEventListener('click', async () => {
             try {
-                // 1. デバイスを探す
+                status.innerText = "デバイスを探しています...";
+                
+                // XIAO-nRF-Sensor という名前のデバイスを探す
                 const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ namePrefix: 'XIAO' }],
-                    optionalServices: ['1234']
-                });
-                
-                status.innerText = "接続中: " + device.name;
-                
-                // 2. サーバーに接続
-                const server = await device.gatt.connect();
-                status.innerText = "サービス取得中...";
-                
-                // 3. サービス取得
-                const service = await server.getPrimaryService('1234');
-                status.innerText = "接続成功！";
-                alert("XIAOとつながりました！");
-                
-            } catch (error) {
-                console.error(error);
-                status.innerText = "エラー: " + error.message;
-                alert("エラー詳細: " + error.message);
-            }
-        });
-    </script>
-</body>
-</html>
+                    filters: [{ name: 'XIAO-nRF-Sensor' }],
