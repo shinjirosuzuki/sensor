@@ -1,97 +1,42 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SWING SENSOR PRO</title>
-    <style>
-        body { background-color: #000; color: #fff; font-family: sans-serif; margin: 0; overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
-        #header { display: flex; justify-content: space-between; padding: 15px; }
-        #timer { background: #ff0000; padding: 5px 10px; font-weight: 900; }
-        #main-container { flex-grow: 1; display: flex; justify-content: center; align-items: center; transition: 0.1s; }
-        #speed-value { font-size: 40vw; font-weight: 900; font-style: italic; }
-        #unit { font-size: 10vw; color: #ff0000; }
-        #unit-toggle-btn { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); width: 70px; height: 70px; border-radius: 50%; background: #ff0000; color: #fff; border: 2px solid #fff; font-weight: bold; z-index: 1000; }
-        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 2000; }
-        #start-btn { background: #ff0000; color: #fff; border: none; padding: 20px 40px; font-weight: 900; font-size: 1.5rem; border-radius: 10px; cursor: pointer; }
-        .flash { background-color: #ff0000 !important; }
-    </style>
+    <title>BLE TEST</title>
 </head>
 <body>
-    <div id="start-overlay">
-        <button id="start-btn">CONNECT TO XIAO</button>
-    </div>
-    <button id="unit-toggle-btn">UNIT<br>CHG</button>
-    <div id="header">
-        <div id="timer">00:00.00</div>
-        <div id="status">OFFLINE</div>
-    </div>
-    <div id="main-container">
-        <div id="speed-value">0.0</div>
-        <div id="unit">km/h</div>
-    </div>
+    <button id="connect" style="font-size: 30px; padding: 20px;">1. 接続テスト開始</button>
+    <div id="status" style="font-size: 20px; margin-top: 20px;">ステータス: 待機中</div>
 
     <script>
-        const BLE_SERVICE_UUID = "1234";
-        const BLE_CHARACTERISTIC_UUID = "5678";
-        let lastKmhValue = 0.0;
-        let currentUnit = 'km/h';
-
-        const startBtn = document.getElementById('start-btn');
-
-        // ★修正ポイント：関数を直接イベントリスナー内に記述
-        startBtn.addEventListener('click', function() {
-            console.log("Connect button clicked");
+        document.getElementById('connect').addEventListener('click', async () => {
+            const status = document.getElementById('status');
+            status.innerText = "スキャン中...";
             
-            // Web Bluetoothの呼び出し
-            navigator.bluetooth.requestDevice({
-                filters: [{ namePrefix: 'XIAO' }],
-                optionalServices: [BLE_SERVICE_UUID]
-            })
-            .then(device => {
-                document.getElementById('status').innerText = 'CONNECTING...';
-                return device.gatt.connect();
-            })
-            .then(server => server.getPrimaryService(BLE_SERVICE_UUID))
-            .then(service => service.getCharacteristic(BLE_CHARACTERISTIC_UUID))
-            .then(characteristic => {
-                characteristic.startNotifications();
-                characteristic.addEventListener('characteristicvaluechanged', (e) => {
-                    let val = new TextDecoder().decode(e.target.value);
-                    lastKmhValue = parseFloat(val);
-                    updateDisplay();
-                    triggerFlash();
+            try {
+                // 1. デバイスを探す
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ namePrefix: 'XIAO' }],
+                    optionalServices: ['1234']
                 });
-                document.getElementById('status').innerText = 'CONNECTED';
-                document.getElementById('start-overlay').style.display = 'none';
-            })
-            .catch(error => {
-                console.log(error);
-                // ここでエラーメッセージを画面に出す
-                alert("Bluetooth Error: " + error.message);
-            });
-        });
-
-        function updateDisplay() {
-            const speedDisplay = document.getElementById('speed-value');
-            if (currentUnit === 'm/s') {
-                speedDisplay.innerText = (lastKmhValue / 3.6).toFixed(1);
-            } else {
-                speedDisplay.innerText = lastKmhValue.toFixed(1);
+                
+                status.innerText = "接続中: " + device.name;
+                
+                // 2. サーバーに接続
+                const server = await device.gatt.connect();
+                status.innerText = "サービス取得中...";
+                
+                // 3. サービス取得
+                const service = await server.getPrimaryService('1234');
+                status.innerText = "接続成功！";
+                alert("XIAOとつながりました！");
+                
+            } catch (error) {
+                console.error(error);
+                status.innerText = "エラー: " + error.message;
+                alert("エラー詳細: " + error.message);
             }
-        }
-
-        document.getElementById('unit-toggle-btn').addEventListener('click', () => {
-            currentUnit = (currentUnit === 'km/h') ? 'm/s' : 'km/h';
-            document.getElementById('unit').innerText = currentUnit;
-            updateDisplay();
         });
-
-        function triggerFlash() {
-            const container = document.getElementById('main-container');
-            container.classList.add('flash');
-            setTimeout(() => container.classList.remove('flash'), 100);
-        }
     </script>
 </body>
 </html>
