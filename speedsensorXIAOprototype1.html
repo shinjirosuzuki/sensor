@@ -3,61 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XIAO Swing Sensor</title>
+    <title>XIAO Swing Sensor v2</title>
     <style>
         body { 
             background: #121212; 
             color: #ffffff; 
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            font-family: sans-serif; 
             text-align: center; 
-            margin: 0; 
             padding: 20px;
+            margin: 0;
         }
-        h1 { color: #00e5ff; margin-bottom: 10px; }
-        .card {
+        .container {
             background: #1e1e1e;
-            border-radius: 20px;
-            padding: 40px 20px;
-            margin: 20px auto;
-            max-width: 400px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 50px;
+            display: inline-block;
+            min-width: 300px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
         #speed { 
-            font-size: 100px; 
+            font-size: 120px; 
             font-weight: bold; 
-            color: #00ff41; /* マトリックス・グリーン */
-            line-height: 1;
+            color: #00ff41; 
+            margin: 20px 0;
         }
-        .unit { font-size: 24px; color: #888; margin-bottom: 30px; }
+        .unit { font-size: 24px; color: #888; }
         button { 
             font-size: 20px; 
-            font-weight: bold;
-            padding: 15px 40px; 
-            background: linear-gradient(45deg, #007bff, #00d2ff);
-            color: #fff; 
+            padding: 15px 30px; 
+            background: #007bff; 
+            color: white; 
             border: none; 
-            border-radius: 50px; 
+            border-radius: 10px; 
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,123,255,0.4);
-            transition: transform 0.2s;
+            margin-top: 20px;
         }
-        button:active { transform: scale(0.95); }
-        #status { margin-top: 25px; font-size: 14px; color: #666; }
+        button:active { background: #0056b3; }
+        #status { margin-top: 20px; color: #aaa; font-size: 14px; }
     </style>
 </head>
 <body>
+
     <h1>SWING SENSOR</h1>
-    
-    <div class="card">
+
+    <div class="container">
         <div id="speed">0.0</div>
         <div class="unit">km/h</div>
-        
         <button id="connectBtn">CONNECT TO XIAO</button>
         <div id="status">ステータス: 未接続</div>
     </div>
 
     <script>
-        // Arduino側と完全に一致させる128ビットUUID
+        // ArduinoコードのUUIDと完全に一致させています
         const SERVICE_UUID = "19b10000-e8f2-537e-4f3c-d104768a1214";
         const CHAR_UUID    = "19b10001-e8f2-537e-4f3c-d104768a1214";
 
@@ -69,6 +67,40 @@
             try {
                 status.innerText = "デバイスを探しています...";
                 
-                // XIAO-nRF-Sensor という名前のデバイスを探す
+                // 【重要】すべてのデバイスをリストに出す設定に変更
                 const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: 'XIAO-nRF-Sensor' }],
+                    acceptAllDevices: true,
+                    optionalServices: [SERVICE_UUID]
+                });
+
+                status.innerText = "接続中: " + device.name;
+                const server = await device.gatt.connect();
+
+                status.innerText = "サービスを取得中...";
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                const characteristic = await service.getCharacteristic(CHAR_UUID);
+
+                // データの受信設定
+                await characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', (event) => {
+                    const value = new TextDecoder().decode(event.target.value);
+                    speedDiv.innerText = value;
+                });
+
+                status.innerText = "接続完了！計測中";
+                btn.style.display = "none"; // 接続できたらボタンを消す
+
+                // 切断検知
+                device.addEventListener('gattserverdisconnected', () => {
+                    status.innerText = "切断されました。ページを更新してください。";
+                    btn.style.display = "block";
+                });
+
+            } catch (error) {
+                console.error(error);
+                status.innerText = "エラー: " + error.message;
+            }
+        });
+    </script>
+</body>
+</html>
