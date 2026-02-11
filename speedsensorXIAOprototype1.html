@@ -14,109 +14,51 @@
         }
 
         /* メイン表示エリア */
-        .container { flex: 1; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        .container { flex: 1; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box; position: relative; }
 
         .header-logo {
             background: var(--supreme-red); color: white;
             display: inline-block; padding: 5px 20px; font-size: 20px; font-weight: 900;
-            align-self: center; letter-spacing: -1px; margin-bottom: 20px;
+            align-self: center; letter-spacing: -1px; margin-bottom: 10px;
         }
 
         /* 速度表示：底辺合わせ */
         .speed-display {
             display: flex; align-items: baseline; justify-content: center;
-            margin: 20px 0; letter-spacing: -5px;
+            margin-top: 30px; letter-spacing: -5px;
         }
-        #speed { font-size: 120px; font-weight: 900; line-height: 1; }
-        .unit { font-size: 48px; font-weight: 800; margin-left: 10px; letter-spacing: -2px; }
+        #speed { font-size: 110px; font-weight: 900; line-height: 1; }
+        .unit { font-size: 44px; font-weight: 800; margin-left: 10px; letter-spacing: -2px; }
 
-        /* 履歴リスト：スライド可能 */
+        /* 中央の接続ボタン：空きスペースの中間に配置 */
+        .connect-area {
+            display: flex; justify-content: center; align-items: center;
+            padding: 30px 0;
+        }
+        #connectBtn {
+            padding: 15px 40px; background: var(--supreme-red); color: #fff;
+            border: none; border-radius: 50px; font-family: 'Montserrat', sans-serif;
+            font-weight: 900; font-style: italic; font-size: 18px; cursor: pointer;
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+        }
+
+        /* 履歴リスト */
         .history-container {
-            flex: 1; overflow-y: auto; margin: 10px 0;
+            flex: 1; overflow-y: auto; margin-top: 10px;
             border-top: 1px solid #333; padding: 10px;
             -webkit-overflow-scrolling: touch;
         }
         .history-item {
-            display: flex; justify-content: space-between;
-            padding: 8px 15px; border-bottom: 1px solid #1a1a1a; font-size: 18px;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 15px; border-bottom: 1px solid #1a1a1a; font-size: 18px;
         }
         .history-item:first-child { color: var(--supreme-red); font-size: 22px; }
 
-        /* 操作ボタン群 */
+        /* 操作ボタン群（下部または右横） */
         .controls {
-            display: flex; background: #111; padding: 10px;
+            display: flex; background: #111; padding: 15px;
             justify-content: space-around; align-items: center;
+            border-top: 1px solid #222;
         }
         .btn {
-            width: 60px; height: 60px; /* 約15mm相当の操作感 */
-            background: #fff; color: #000; border: none;
-            font-family: 'Montserrat', sans-serif; font-weight: 900; font-style: italic;
-            font-size: 12px; cursor: pointer; border-radius: 5px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-        .btn.active { background: var(--supreme-red); color: #fff; }
-
-        /* 横画面レイアウト */
-        @media (orientation: landscape) {
-            body { flex-direction: row; }
-            .controls { flex-direction: column; width: 80px; height: 100vh; }
-            .history-container { max-height: none; }
-        }
-
-        #status { font-size: 9px; color: #444; position: absolute; top: 5px; left: 5px; font-style: normal; }
-    </style>
-</head>
-<body>
-    <div id="status">READY</div>
-    <div class="container">
-        <div class="header-logo">SWING</div>
-        
-        <div class="speed-display">
-            <div id="speed">0.0</div>
-            <div class="unit" id="unitLabel">km/h</div>
-        </div>
-
-        <div class="history-container" id="historyList">
-            </div>
-    </div>
-
-    <nav class="controls">
-        <button class="btn" id="unitBtn">UNIT<br>km/h</button>
-        <button class="btn" id="pauseBtn">PAUSE</button>
-        <button class="btn" id="saveBtn">SAVE</button>
-        <button class="btn" id="connectBtn" style="background:var(--supreme-red); color:#fff;">LOG</button>
-    </nav>
-
-    <script>
-        const SERVICE_UUID = "19b10000-e8f2-537e-4f3c-d104768a1214";
-        const CHAR_UUID    = "19b10001-e8f2-537e-4f3c-d104768a1214";
-
-        let isPaused = false;
-        let currentUnit = 'km/h'; // or 'm/s'
-        let history = [];
-
-        const speedDiv = document.getElementById('speed');
-        const unitLabel = document.getElementById('unitLabel');
-        const historyList = document.getElementById('historyList');
-
-        // 単位切り替え
-        document.getElementById('unitBtn').addEventListener('click', (e) => {
-            currentUnit = (currentUnit === 'km/h') ? 'm/s' : 'km/h';
-            e.target.innerHTML = `UNIT<br>${currentUnit}`;
-            unitLabel.innerText = currentUnit;
-        });
-
-        // 一時停止
-        document.getElementById('pauseBtn').addEventListener('click', (e) => {
-            isPaused = !isPaused;
-            e.target.innerText = isPaused ? "RESUME" : "PAUSE";
-            e.target.classList.toggle('active');
-        });
-
-        // 保存（CSVなどで書き出しも可能ですが、今はコンソール表示のみ）
-        document.getElementById('saveBtn').addEventListener('click', () => {
-            alert("History Saved: " + history.length + " logs");
-        });
-
-        // BLE接続処理
-        document.getElementById('
+            width: 60px;
