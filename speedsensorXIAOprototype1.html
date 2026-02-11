@@ -61,4 +61,125 @@
             border-top: 1px solid #222;
         }
         .btn {
-            width: 60px;
+            width: 60px; height: 60px; /* 約15mm */
+            background: #fff; color: #000; border: none;
+            font-family: 'Montserrat', sans-serif; font-weight: 900; font-style: italic;
+            font-size: 11px; cursor: pointer; border-radius: 8px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            line-height: 1.2;
+        }
+        .btn.active { background: #555; color: #fff; }
+
+        /* 横画面レイアウト */
+        @media (orientation: landscape) {
+            body { flex-direction: row; }
+            .container { height: 100vh; }
+            .controls { flex-direction: column; width: 90px; height: 100vh; border-top: none; border-left: 1px solid #222; }
+            .connect-area { padding: 15px 0; }
+        }
+
+        #status { font-size: 9px; color: #444; position: absolute; top: 10px; left: 10px; font-style: normal; }
+    </style>
+</head>
+<body>
+    <div id="status">OFFLINE</div>
+    <div class="container">
+        <div class="header-logo">SWING</div>
+        
+        <div class="speed-display">
+            <div id="speed">0.0</div>
+            <div class="unit" id="unitLabel">km/h</div>
+        </div>
+
+        <div class="connect-area">
+            <button id="connectBtn">CONNECT SENSOR</button>
+        </div>
+
+        <div class="history-container" id="historyList">
+            </div>
+    </div>
+
+    <nav class="controls">
+        <button class="btn" id="unitBtn">UNIT<br>km/h</button>
+        <button class="btn" id="pauseBtn">PAUSE</button>
+        <button class="btn" id="saveBtn">SAVE</button>
+    </nav>
+
+    <script>
+        const SERVICE_UUID = "19b10000-e8f2-537e-4f3c-d104768a1214";
+        const CHAR_UUID    = "19b10001-e8f2-537e-4f3c-d104768a1214";
+
+        let isPaused = false;
+        let currentUnit = 'km/h';
+        let history = [];
+
+        const speedDiv = document.getElementById('speed');
+        const unitLabel = document.getElementById('unitLabel');
+        const historyList = document.getElementById('historyList');
+        const connectBtn = document.getElementById('connectBtn');
+
+        // 単位切り替え
+        document.getElementById('unitBtn').addEventListener('click', (e) => {
+            currentUnit = (currentUnit === 'km/h') ? 'm/s' : 'km/h';
+            e.target.innerHTML = `UNIT<br>${currentUnit}`;
+            unitLabel.innerText = currentUnit;
+        });
+
+        // 一時停止
+        document.getElementById('pauseBtn').addEventListener('click', (e) => {
+            isPaused = !isPaused;
+            e.target.innerText = isPaused ? "RESUME" : "PAUSE";
+            e.target.classList.toggle('active');
+        });
+
+        // 保存
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            alert("History Saved!");
+        });
+
+        // BLE接続処理
+        connectBtn.addEventListener('click', async () => {
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true, optionalServices: [SERVICE_UUID]
+                });
+                const server = await device.gatt.connect();
+                const service = await server.getPrimaryService(SERVICE_UUID);
+                const characteristic = await service.getCharacteristic(CHAR_UUID);
+
+                await characteristic.startNotifications();
+                document.getElementById('status').innerText = "ONLINE";
+                connectBtn.style.visibility = "hidden"; // 接続後は場所を確保したまま隠す
+
+                characteristic.addEventListener('characteristicvaluechanged', (event) => {
+                    if (isPaused) return;
+
+                    let val = parseFloat(new TextDecoder().decode(event.target.value));
+                    if (currentUnit === 'm/s') val = val / 3.6;
+
+                    const displayVal = val.toFixed(1);
+                    speedDiv.innerText = displayVal;
+
+                    const now = new Date();
+                    const timeStr = now.getHours().toString().padStart(2, '0') + ":" + 
+                                  now.getMinutes().toString().padStart(2, '0') + ":" + 
+                                  now.getSeconds().toString().padStart(2, '0');
+                    addHistory(displayVal, currentUnit, timeStr);
+                });
+            } catch (e) { console.error(e); }
+        });
+
+        function addHistory(val, unit, time) {
+            history.unshift({val, unit, time});
+            if (history.length > 50) history.pop();
+            
+            historyList.innerHTML = history.map(item => `
+                <div class="history-item">
+                    <span>${item.val} <small style="font-size:12px; margin-left:5px;">${item.unit}</small></span>
+                    <span style="color:#444; font-size:12px; font-style:normal;">${item.time}</span>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
